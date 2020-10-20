@@ -90,6 +90,26 @@ class Simulator:
             yield from process()
         self._engine.add_coroutine_process(wrapper, default_cmd=Tick(domain))
 
+    def add_bench_process(self, process, *, domain="sync"):
+        process = self._check_process(process)
+        def wrapper():
+            generator = process()
+            # Only start a bench process after power-on reset settles.
+            try:
+                yield Settle()
+                command = generator.send(None)
+                while True:
+                    try:
+                        result = yield command
+                    except Exception as e:
+                        generator.throw(e)
+                        continue
+                    yield Settle()
+                    command = generator.send(result)
+            except StopIteration:
+                pass
+        self._engine.add_coroutine_process(wrapper, default_cmd=Tick(domain))
+
     def add_clock(self, period, *, phase=None, domain="sync", if_exists=False):
         """Add a clock process.
 

@@ -590,6 +590,19 @@ class SimulatorIntegrationTestCase(FHDLTestCase):
             sim.add_process(process)
         self.assertTrue(survived)
 
+    def test_bench_command_wrong(self):
+        survived = False
+        with self.assertSimulation(Module()) as sim:
+            def process():
+                nonlocal survived
+                with self.assertRaisesRegex(TypeError,
+                        r"Received unsupported command 1 from process .+?"):
+                    yield 1
+                yield Settle()
+                survived = True
+            sim.add_bench_process(process)
+        self.assertTrue(survived)
+
     def setUp_memory(self, rd_synchronous=True, rd_transparent=True, wr_granularity=None):
         self.m = Module()
         self.memory = Memory(width=8, depth=4, init=[0xaa, 0x55])
@@ -720,6 +733,49 @@ class SimulatorIntegrationTestCase(FHDLTestCase):
                 self.assertEqual((yield self.rdport.data), 0x55)
             sim.add_clock(1e-6)
             sim.add_sync_process(process)
+
+    def test_comb_bench_process(self):
+        m = Module()
+        a = Signal(reset=1)
+        b = Signal()
+        m.d.comb += b.eq(a)
+        with self.assertSimulation(m) as sim:
+            def process():
+                self.assertEqual((yield a), 1)
+                self.assertEqual((yield b), 1)
+                yield a.eq(0)
+                self.assertEqual((yield a), 0)
+                self.assertEqual((yield b), 0)
+            sim.add_bench_process(process)
+
+    def test_sync_bench_process(self):
+        m = Module()
+        a = Signal(reset=1)
+        b = Signal()
+        m.d.sync += b.eq(a)
+        t = Signal()
+        m.d.sync += t.eq(~t)
+        with self.assertSimulation(m) as sim:
+            def process():
+                self.assertEqual((yield a), 1)
+                self.assertEqual((yield b), 0)
+                self.assertEqual((yield t), 0)
+                yield
+                self.assertEqual((yield a), 1)
+                self.assertEqual((yield b), 1)
+                self.assertEqual((yield t), 1)
+                yield
+                self.assertEqual((yield a), 1)
+                self.assertEqual((yield b), 1)
+                self.assertEqual((yield t), 0)
+                yield a.eq(0)
+                self.assertEqual((yield a), 0)
+                self.assertEqual((yield b), 1)
+                yield
+                self.assertEqual((yield a), 0)
+                self.assertEqual((yield b), 0)
+            sim.add_clock(1e-6)
+            sim.add_bench_process(process)
 
     def test_sample_helpers(self):
         m = Module()
