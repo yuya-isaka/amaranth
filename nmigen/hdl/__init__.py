@@ -1,5 +1,6 @@
 from .ast import Shape, unsigned, signed
 from .ast import Value, Const, C, Mux, Cat, Repl, Array, Signal, ClockSignal, ResetSignal
+from .ast import Display
 from .dsl import Module
 from .cd import ClockDomain
 from .ir import Elaboratable, Fragment, Instance
@@ -11,6 +12,7 @@ from .xfrm import DomainRenamer, ResetInserter, EnableInserter
 __all__ = [
     "Shape", "unsigned", "signed",
     "Value", "Const", "C", "Mux", "Cat", "Repl", "Array", "Signal", "ClockSignal", "ResetSignal",
+    "Display",
     "Module",
     "ClockDomain",
     "Elaboratable", "Fragment", "Instance",
