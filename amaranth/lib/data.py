@@ -6,7 +6,7 @@ from amaranth.hdl.ast import ShapeCastable, ValueCastable
 
 
 __all__ = [
-    "Field", "Layout", "StructLayout", "UnionLayout", "ArrayLayout", "IrregularLayout",
+    "Field", "Layout", "StructLayout", "UnionLayout", "ArrayLayout", "FlexibleLayout",
     "View", "Struct", "Union",
 ]
 
@@ -241,7 +241,7 @@ class ArrayLayout(Layout):
         return f"ArrayLayout({self._elem_shape!r}, {self.length})"
 
 
-class IrregularLayout(Layout):
+class FlexibleLayout(Layout):
     def __init__(self, size, fields):
         self.size   = size
         self.fields = fields
@@ -253,13 +253,13 @@ class IrregularLayout(Layout):
     @size.setter
     def size(self, size):
         if not isinstance(size, int) or size < 0:
-            raise TypeError("Irregular layout size must be a non-negative integer, not {!r}"
+            raise TypeError("Flexible layout size must be a non-negative integer, not {!r}"
                             .format(size))
         if hasattr(self, "_fields") and self._fields:
             endmost_name, endmost_field = max(self._fields.items(),
                 key=lambda pair: pair[1].offset + pair[1].width)
             if endmost_field.offset + endmost_field.width > size:
-                raise ValueError("Irregular layout size {} does not cover the field '{}', which "
+                raise ValueError("Flexible layout size {} does not cover the field '{}', which "
                                  "ends at bit {}"
                                  .format(size, endmost_name,
                                          endmost_field.offset + endmost_field.width))
@@ -273,18 +273,18 @@ class IrregularLayout(Layout):
     def fields(self, fields):
         self._fields = {}
         if not isinstance(fields, Mapping):
-            raise TypeError("Irregular layout fields must be provided as a mapping, not {!r}"
+            raise TypeError("Flexible layout fields must be provided as a mapping, not {!r}"
                             .format(fields))
         for key, field in fields.items():
             if not isinstance(key, (int, str)) or (isinstance(key, int) and key < 0):
-                raise TypeError("Irregular layout field name must be a non-negative integer or "
+                raise TypeError("Flexible layout field name must be a non-negative integer or "
                                 "a string, not {!r}"
                                 .format(key))
             if not isinstance(field, Field):
-                raise TypeError("Irregular layout field value must be a Field instance, not {!r}"
+                raise TypeError("Flexible layout field value must be a Field instance, not {!r}"
                                 .format(field))
             if field.offset + field.width > self._size:
-                raise ValueError("Irregular layout field '{}' ends at bit {}, exceeding "
+                raise ValueError("Flexible layout field '{}' ends at bit {}, exceeding "
                                  "the size of {} bit(s)"
                                  .format(key, field.offset + field.width, self._size))
             self._fields[key] = field
@@ -295,10 +295,10 @@ class IrregularLayout(Layout):
     def __getitem__(self, key):
         if isinstance(key, (int, str)):
             return self._fields[key]
-        raise TypeError("Cannot index irregular layout with {!r}".format(key))
+        raise TypeError("Cannot index flexible layout with {!r}".format(key))
 
     def __repr__(self):
-        return f"IrregularLayout({self._size}, {self._fields!r})"
+        return f"FlexibleLayout({self._size}, {self._fields!r})"
 
 
 class View(ValueCastable):

@@ -219,9 +219,9 @@ class ArrayLayoutTestCase(TestCase):
             al["a"]
 
 
-class IrregularLayoutTestCase(TestCase):
+class FlexibleLayoutTestCase(TestCase):
     def test_construct(self):
-        il = IrregularLayout(8, {
+        il = FlexibleLayout(8, {
             "a": Field(unsigned(1), 1),
             "b": Field(unsigned(3), 0),
             0: Field(unsigned(2), 5)
@@ -242,83 +242,83 @@ class IrregularLayoutTestCase(TestCase):
         self.assertEqual(il[0], Field(unsigned(2), 5))
 
     def test_eq(self):
-        self.assertEqual(IrregularLayout(3, {"a": Field(unsigned(1), 0)}),
-                         IrregularLayout(3, {"a": Field(unsigned(1), 0)}))
-        self.assertNotEqual(IrregularLayout(3, {"a": Field(unsigned(1), 0)}),
-                            IrregularLayout(4, {"a": Field(unsigned(1), 0)}))
-        self.assertNotEqual(IrregularLayout(3, {"a": Field(unsigned(1), 0)}),
-                            IrregularLayout(3, {"a": Field(unsigned(1), 1)}))
+        self.assertEqual(FlexibleLayout(3, {"a": Field(unsigned(1), 0)}),
+                         FlexibleLayout(3, {"a": Field(unsigned(1), 0)}))
+        self.assertNotEqual(FlexibleLayout(3, {"a": Field(unsigned(1), 0)}),
+                            FlexibleLayout(4, {"a": Field(unsigned(1), 0)}))
+        self.assertNotEqual(FlexibleLayout(3, {"a": Field(unsigned(1), 0)}),
+                            FlexibleLayout(3, {"a": Field(unsigned(1), 1)}))
 
     def test_eq_duck(self):
-        self.assertEqual(IrregularLayout(3, {"a": Field(unsigned(1), 0),
+        self.assertEqual(FlexibleLayout(3, {"a": Field(unsigned(1), 0),
                                              "b": Field(unsigned(2), 1)}),
                          StructLayout({"a": unsigned(1),
                                        "b": unsigned(2)}))
-        self.assertEqual(IrregularLayout(2, {"a": Field(unsigned(1), 0),
+        self.assertEqual(FlexibleLayout(2, {"a": Field(unsigned(1), 0),
                                              "b": Field(unsigned(2), 0)}),
                          UnionLayout({"a": unsigned(1),
                                       "b": unsigned(2)}))
 
     def test_repr(self):
-        il = IrregularLayout(8, {
+        il = FlexibleLayout(8, {
             "a": Field(unsigned(1), 1),
             "b": Field(unsigned(3), 0),
             0: Field(unsigned(2), 5)
         })
-        self.assertEqual(repr(il), "IrregularLayout(8, {"
+        self.assertEqual(repr(il), "FlexibleLayout(8, {"
             "'a': Field(unsigned(1), 1), "
             "'b': Field(unsigned(3), 0), "
             "0: Field(unsigned(2), 5)})")
 
     def test_fields_wrong(self):
         with self.assertRaisesRegex(TypeError,
-                r"^Irregular layout fields must be provided as a mapping, not <.+>$"):
-            IrregularLayout(8, object())
+                r"^Flexible layout fields must be provided as a mapping, not <.+>$"):
+            FlexibleLayout(8, object())
 
     def test_field_key_wrong(self):
         with self.assertRaisesRegex(TypeError,
-                r"^Irregular layout field name must be a non-negative integer or a string, "
+                r"^Flexible layout field name must be a non-negative integer or a string, "
                 r"not 1\.0$"):
-            IrregularLayout(8, {1.0: unsigned(1)})
+            FlexibleLayout(8, {1.0: unsigned(1)})
         with self.assertRaisesRegex(TypeError,
-                r"^Irregular layout field name must be a non-negative integer or a string, "
+                r"^Flexible layout field name must be a non-negative integer or a string, "
                 r"not -1$"):
-            IrregularLayout(8, {-1: unsigned(1)})
+            FlexibleLayout(8, {-1: unsigned(1)})
 
     def test_field_value_wrong(self):
         with self.assertRaisesRegex(TypeError,
-                r"^Irregular layout field value must be a Field instance, not 1\.0$"):
-            IrregularLayout(8, {"a": 1.0})
+                r"^Flexible layout field value must be a Field instance, not 1\.0$"):
+            FlexibleLayout(8, {"a": 1.0})
 
     def test_size_wrong_negative(self):
         with self.assertRaisesRegex(TypeError,
-                r"^Irregular layout size must be a non-negative integer, not -1$"):
-            IrregularLayout(-1, {})
+                r"^Flexible layout size must be a non-negative integer, not -1$"):
+            FlexibleLayout(-1, {})
 
     def test_size_wrong_small(self):
         with self.assertRaisesRegex(ValueError,
-                r"^Irregular layout field 'a' ends at bit 8, exceeding the size of 4 bit\(s\)$"):
-            IrregularLayout(4, {"a": Field(unsigned(8), 0)})
+                r"^Flexible layout field 'a' ends at bit 8, exceeding the size of 4 bit\(s\)$"):
+            FlexibleLayout(4, {"a": Field(unsigned(8), 0)})
         with self.assertRaisesRegex(ValueError,
-                r"^Irregular layout field 'a' ends at bit 5, exceeding the size of 4 bit\(s\)$"):
-            IrregularLayout(4, {"a": Field(unsigned(2), 3)})
+                r"^Flexible layout field 'a' ends at bit 5, exceeding the size of 4 bit\(s\)$"):
+            FlexibleLayout(4, {"a": Field(unsigned(2), 3)})
 
     def test_size_wrong_shrink(self):
-        il = IrregularLayout(8, {"a": Field(unsigned(2), 3)})
+        il = FlexibleLayout(8, {"a": Field(unsigned(2), 3)})
         with self.assertRaisesRegex(ValueError,
-                r"^Irregular layout size 4 does not cover the field 'a', which ends at bit 5$"):
+                r"^Flexible layout size 4 does not cover the field 'a', which ends at bit 5$"):
             il.size = 4
 
     def test_key_wrong_missing(self):
-        il = IrregularLayout(8, {"a": Field(unsigned(2), 3)})
+        il = FlexibleLayout(8, {"a": Field(unsigned(2), 3)})
         with self.assertRaisesRegex(KeyError,
                 r"^0$"):
             il[0]
 
     def test_key_wrong_type(self):
-        il = IrregularLayout(8, {"a": Field(unsigned(2), 3)})
+        il = FlexibleLayout(8, {"a": Field(unsigned(2), 3)})
         with self.assertRaisesRegex(TypeError,
-                r"^Cannot index irregular layout with <.+>$"):
+                r"^Cannot index flexible layout with <.+>$"):
             il[object()]
 
 
