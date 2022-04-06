@@ -221,7 +221,7 @@ class ArrayLayout(Layout):
         offset = 0
         for index in range(self._length):
             yield index, Field(self._elem_shape, offset)
-            offset += self._elem_shape.width
+            offset += Shape.cast(self._elem_shape).width
 
     def __getitem__(self, key):
         if isinstance(key, int):
@@ -230,12 +230,12 @@ class ArrayLayout(Layout):
                 raise KeyError(key)
             if key < 0:
                 key += self._length
-            return Field(self._elem_shape, key * self._elem_shape.width)
+            return Field(self._elem_shape, key * Shape.cast(self._elem_shape).width)
         raise TypeError("Cannot index array layout with {!r}".format(key))
 
     @property
     def size(self):
-        return self._elem_shape.width * self.length
+        return Shape.cast(self._elem_shape).width * self.length
 
     def __repr__(self):
         return f"ArrayLayout({self._elem_shape!r}, {self.length})"

@@ -182,6 +182,10 @@ class ArrayLayoutTestCase(TestCase):
         self.assertEqual(al[-3], Field(unsigned(2), 0))
         self.assertEqual(al.size, 6)
 
+    def test_shape_castable(self):
+        al = ArrayLayout(2, 3)
+        self.assertEqual(al.size, 6)
+
     def test_eq(self):
         self.assertEqual(ArrayLayout(unsigned(2), 3),
                          ArrayLayout(unsigned(2), 3))
