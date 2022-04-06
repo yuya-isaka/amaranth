@@ -368,28 +368,27 @@ class View(ValueCastable):
         return item
 
 
-class _AggregateMeta(type, ShapeCastable):
-    def __init__(cls, name, bases, namespace, **kwargs):
-        if "layout_cls" in kwargs:
-            cls.__layout_cls = kwargs["layout_cls"]
+class _AggregateMeta(ShapeCastable, type):
+    def __new__(metacls, name, bases, namespace, *, _layout_cls=None, **kwargs):
+        cls = type.__new__(metacls, name, bases, namespace, **kwargs)
+        if _layout_cls is not None:
+            cls.__layout_cls = _layout_cls
         if "__annotations__" in namespace:
             cls.__layout = cls.__layout_cls(namespace["__annotations__"])
+        return cls
 
     def as_shape(cls):
         return cls.__layout
 
 
 class _Aggregate(View, metaclass=_AggregateMeta):
-    def __init_subclass__(cls, **kwargs):
-        pass
-
     def __init__(self, value=None, *, src_loc_at=0):
         super().__init__(self.__class__, value, src_loc_at=src_loc_at + 1)
 
 
-class Struct(_Aggregate, layout_cls=StructLayout):
+class Struct(_Aggregate, _layout_cls=StructLayout):
     pass
 
 
-class Union(_Aggregate, layout_cls=UnionLayout):
+class Union(_Aggregate, _layout_cls=UnionLayout):
     pass
