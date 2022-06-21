@@ -5,6 +5,7 @@ from ..hdl.rec import *
 __all__ = ["pin_layout", "Pin"]
 
 
+# すべてのピンが持つレイアウト
 def pin_layout(width, dir, xdr=0):
     """
     Layout of the platform interface of a pin or several pins, which may be used inside
@@ -13,14 +14,15 @@ def pin_layout(width, dir, xdr=0):
     See :class:`Pin` for details.
     """
     if not isinstance(width, int) or width < 1:
-        raise TypeError("Width must be a positive integer, not {!r}"
-                        .format(width))
+        raise TypeError("Width must be a positive integer, not {!r}".format(width))
     if dir not in ("i", "o", "oe", "io"):
-        raise TypeError("Direction must be one of \"i\", \"o\", \"io\", or \"oe\", not {!r}"""
-                        .format(dir))
+        raise TypeError(
+            'Direction must be one of "i", "o", "io", or "oe", not {!r}' "".format(dir)
+        )
     if not isinstance(xdr, int) or xdr < 0:
-        raise TypeError("Gearing ratio must be a non-negative integer, not {!r}"
-                        .format(xdr))
+        raise TypeError(
+            "Gearing ratio must be a non-negative integer, not {!r}".format(xdr)
+        )
 
     fields = []
     if dir in ("i", "io"):
@@ -107,10 +109,15 @@ class Pin(Record):
         cannot change direction more than once per cycle, so at most one output enable signal
         is present.
     """
+
     def __init__(self, width, dir, *, xdr=0, name=None, src_loc_at=0):
         self.width = width
-        self.dir   = dir
-        self.xdr   = xdr
+        self.dir = dir
+        self.xdr = xdr
 
-        super().__init__(pin_layout(self.width, self.dir, self.xdr),
-                         name=name, src_loc_at=src_loc_at + 1)
+        # すべてのピンが持つレイアウトをここで検証している？
+        super().__init__(
+            pin_layout(self.width, self.dir, self.xdr),
+            name=name,
+            src_loc_at=src_loc_at + 1,
+        )

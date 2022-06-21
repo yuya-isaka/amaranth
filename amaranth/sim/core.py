@@ -33,8 +33,11 @@ class Delay(Command):
 class Tick(Command):
     def __init__(self, domain="sync"):
         if not isinstance(domain, (str, ClockDomain)):
-            raise TypeError("Domain must be a string or a ClockDomain instance, not {!r}"
-                            .format(domain))
+            raise TypeError(
+                "Domain must be a string or a ClockDomain instance, not {!r}".format(
+                    domain
+                )
+            )
         assert domain != "comb"
         self.domain = domain
 
@@ -58,37 +61,48 @@ class Simulator:
             pass
         elif engine == "pysim":
             from .pysim import PySimEngine
+
             engine = PySimEngine
         else:
-            raise TypeError("Value '{!r}' is not a simulation engine class or "
-                            "a simulation engine name"
-                            .format(engine))
+            raise TypeError(
+                "Value '{!r}' is not a simulation engine class or "
+                "a simulation engine name".format(engine)
+            )
 
         self._fragment = Fragment.get(fragment, platform=None).prepare()
-        self._engine   = engine(self._fragment)
-        self._clocked  = set()
+        self._engine = engine(self._fragment)
+        self._clocked = set()
 
     def _check_process(self, process):
-        if not (inspect.isgeneratorfunction(process) or inspect.iscoroutinefunction(process)):
-            raise TypeError("Cannot add a process {!r} because it is not a generator function"
-                            .format(process))
+        if not (
+            inspect.isgeneratorfunction(process) or inspect.iscoroutinefunction(process)
+        ):
+            raise TypeError(
+                "Cannot add a process {!r} because it is not a generator function".format(
+                    process
+                )
+            )
         return process
 
     def add_process(self, process):
         process = self._check_process(process)
+
         def wrapper():
             # Only start a bench process after comb settling, so that the reset values are correct.
             yield Settle()
             yield from process()
+
         self._engine.add_coroutine_process(wrapper, default_cmd=None)
 
     def add_sync_process(self, process, *, domain="sync"):
         process = self._check_process(process)
+
         def wrapper():
             # Only start a sync process after the first clock edge (or reset edge, if the domain
             # uses an asynchronous reset). This matches the behavior of synchronous FFs.
             yield Tick(domain)
             yield from process()
+
         self._engine.add_coroutine_process(wrapper, default_cmd=Tick(domain))
 
     def add_clock(self, period, *, phase=None, domain="sync", if_exists=False):
@@ -113,24 +127,28 @@ class Simulator:
             in this case.
         """
         if isinstance(domain, ClockDomain):
-            if (domain.name in self._fragment.domains and
-                    domain is not self._fragment.domains[domain.name]):
-                warnings.warn("Adding a clock process that drives a clock domain object "
-                              "named {!r}, which is distinct from an identically named domain "
-                              "in the simulated design"
-                              .format(domain.name),
-                              UserWarning, stacklevel=2)
+            if (
+                domain.name in self._fragment.domains
+                and domain is not self._fragment.domains[domain.name]
+            ):
+                warnings.warn(
+                    "Adding a clock process that drives a clock domain object "
+                    "named {!r}, which is distinct from an identically named domain "
+                    "in the simulated design".format(domain.name),
+                    UserWarning,
+                    stacklevel=2,
+                )
         elif domain in self._fragment.domains:
             domain = self._fragment.domains[domain]
         elif if_exists:
             return
         else:
-            raise ValueError("Domain {!r} is not present in simulation"
-                             .format(domain))
+            raise ValueError("Domain {!r} is not present in simulation".format(domain))
         if domain in self._clocked:
-            raise ValueError("Domain {!r} already has a clock driving it"
-                             .format(domain.name))
-        
+            raise ValueError(
+                "Domain {!r} already has a clock driving it".format(domain.name)
+            )
+
         # We represent times internally in 1 ps units, but users supply float quantities of seconds
         period = int(period * 1e12)
 
@@ -186,6 +204,16 @@ class Simulator:
 
         If the simulation stops advancing, this function will never return.
         """
+        """シミュレーションを ``deadline`` に進むまで実行します。
+
+        Run_passive`` が ``False`` の場合、アクティブなプロセスが存在しなくなると、シミュレーションも停止します。
+        meth:`run` と同様です。そうでない場合は、シミュレーションを停止させるのは
+        そうでない場合は、シミュレーションが ``deadline`` まで進むか、それを過ぎた時点で停止します。
+
+        シミュレーションの進行が停止した場合、この関数は決して戻りません。
+        """
+
+        # 秒単位のデッドラインを内部的な1ps単位に変換します。
         # Convert deadline in seconds into internal 1 ps units
         deadline = deadline * 1e12
         assert self._engine.now <= deadline
@@ -215,6 +243,10 @@ class Simulator:
             for file in (vcd_file, gtkw_file):
                 if hasattr(file, "close"):
                     file.close()
-            raise ValueError("Cannot start writing waveforms after advancing simulation time")
+            raise ValueError(
+                "Cannot start writing waveforms after advancing simulation time"
+            )
 
-        return self._engine.write_vcd(vcd_file=vcd_file, gtkw_file=gtkw_file, traces=traces)
+        return self._engine.write_vcd(
+            vcd_file=vcd_file, gtkw_file=gtkw_file, traces=traces
+        )
